@@ -63,7 +63,6 @@ void InstallZlibHook() {
 }
 
 void InstallAllowRefractionandMSAA() {
-	SafeWrite8(0x0040CE11, 0); // Stops to clear the depth buffer when rendering the 1st person node
 	WriteNop(0x00498968, 2); // Stops Disabling refraction shaders when MSAA, Non detection path
 	WriteRelJump(0x004988D8, 0x0049896A);// Stops Disabling refraction shaders when MSAA, AMD Path
 }

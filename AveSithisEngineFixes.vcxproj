@@ -12,7 +12,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D4DDA734-7E93-4581-8F82-32BB738F69FE}</ProjectGuid>
-    <RootNamespace>obse_plugin_example</RootNamespace>
+    <RootNamespace>AveSithisEngineFixes</RootNamespace>
     <SccProjectName>
     </SccProjectName>
     <SccLocalPath>
