@@ -1,0 +1,4 @@
+LIBRARY	"llde_misc_additions"
+EXPORTS
+OBSEPlugin_Query
+OBSEPlugin_Load
