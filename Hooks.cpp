@@ -1,5 +1,8 @@
 #include <Detours\detours.h>
+#include <cerrno>
+#include <cstdlib>
 #include <obse/GameForms.h>
+#include <obse/GameObjects.h>
 #include <obse/NiObjects.h>
 #include "Hooks.h"
 #include <obse_common/SafeWrite.h>
@@ -55,6 +58,69 @@ void __declspec(naked) PreventSetLevelCrashBows() {
 	}
 }
 
+void __fastcall LogActor(Actor* This) {
+	_MESSAGE("Actor reference %08X  in  %s have null baseForm", This->refID, This->parentCell ? This->parentCell->GetFullName()->name.m_data : "<No Cell>"); 
+
+}
+
+static UInt32 kReturnNull = 0x005E66D2;
+static UInt32 kReturnNotNull = 0x005E66A5;
+void __declspec(naked) AvoidNullAccess() {
+	__asm {
+		 mov edi,eax
+		 test edi,edi
+		 jz null_check
+		 jmp [kReturnNotNull]
+
+
+		 null_check :
+			pushad
+			call LogActor
+			popad
+			pop ebx
+			jmp[kReturnNull]
+
+	}
+}
+
+void  __fastcall  RemoveFormFromSpellListFromEntry(TESSpellList::Entry* list, TESSpellList::Entry* entry){
+	ThisStdCall(0x0065C620, list,   entry->type);
+}
+
+static UInt32 kReturnTest = 0x0046FCA3;
+void  __declspec(naked) FixTESSpellListInfiniteLoad(){
+ __asm {
+		pushad
+		mov edx, ebp
+		mov ecx,  esi
+		call RemoveFormFromSpellListFromEntry
+		popad
+		mov  ebp,0
+		jmp [kReturnTest]
+	}
+
+}
+
+void  __fastcall  RemoveFormFromSpellListFromEntry1(TESSpellList::Entry* list, TESSpellList::Entry* entry){
+	//_MESSAGE("OOK % 08X  %08X  %08X %08X", list, edx, list1, list1->type);
+	ThisStdCall(0x0065C620, list,   entry->type);
+}
+
+static UInt32 kReturnTest1 = 0x0046FDE9 ;
+void  __declspec(naked) FixTESSpellListInfiniteLoad1(){
+	__asm {
+		pushad
+		//EDX Is arg, use __fastcall
+		mov ecx , edi
+		mov edx, ebp
+		call RemoveFormFromSpellListFromEntry1
+		popad
+		mov ebp, 0 //At this point ebp->next should be effectively the null pointer, but better safe then sorry
+		jmp [kReturnTest1]
+	}
+
+}
+
 
 void InstallZlibHook() {
 	WriteRelJump(0x00742490, (UInt32)&zlib_InflateInitEx);
@@ -80,6 +146,11 @@ void InstallHooks() {
 	InstallAllowRefractionandMSAA();
 	WriteRelJump(0x0085BD9D, 0x0085BDAD); /*Stub WATER_LAVA 410 pass*/
 	WriteRelJump(0x004984BD, 0x004984CD); // Skips antialiasing deactivation if AllowScreenshot is enabled
+	WriteRelJump(0x005E669F, (UInt32)&AvoidNullAccess);
+	WriteRelJump(0x0046FC94, (UInt32)&FixTESSpellListInfiniteLoad);
+
+	WriteRelJump(0x0046FDDE, (UInt32)&FixTESSpellListInfiniteLoad1);
+
 	if (inst->updateZlib) {
 		_MESSAGE("[PATCH] Update Zlib inflate functions.");
 		InstallZlibHook();
