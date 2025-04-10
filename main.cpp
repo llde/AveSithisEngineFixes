@@ -49,7 +49,7 @@ bool OBSEPlugin_Query(const OBSEInterface * obse, PluginInfo * info)
 	info->infoVersion = PluginInfo::kInfoVersion;
 	info->name = "AveSithisEngineFixes";
 	info->version = 1;
-	_MESSAGE("AveSithis Engine Fixes  Version 1.0");
+	_MESSAGE("AveSithis Engine Fixes  Version 1.1");
 	// version checks
 	if(!obse->isEditor)
 	{

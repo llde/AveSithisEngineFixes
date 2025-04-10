@@ -122,6 +122,30 @@ void  __declspec(naked) FixTESSpellListInfiniteLoad1(){
 }
 
 
+static  UInt32 IsTrespassPackageExtraDataPresent = 0x0041DF60;
+
+bool __fastcall  FixShouldRespawnNullCheckRoutine(TESObjectREFR* This, UInt32 edx){
+
+	TESForm*  baseForm = This->GetBaseForm();
+
+	if(baseForm == nullptr)  return false;  //Patch for original code, it was entering the if even when baseform was null, triggering a nullptr access
+
+	if(baseForm->typeID - kFormType_NPC > 2  || ThisStdCall(IsTrespassPackageExtraDataPresent, &This->baseExtraList))
+	{
+		UInt32 type = baseForm->typeID;
+		if ( type == kFormType_Container )
+		{
+				return ((TESObjectCONT*)baseForm)->IsRespawning();
+		}
+		else if ( type - kFormType_NPC <= 1 )
+		{
+			return ((TESActorBase*)baseForm)->actorBaseData.IsRespawning();
+		}
+	}
+	return false;
+}
+
+
 void InstallZlibHook() {
 	WriteRelJump(0x00742490, (UInt32)&zlib_InflateInitEx);
 	WriteRelJump(0x00743970, (UInt32)&zlib_InflateEnd);
@@ -132,7 +156,6 @@ void InstallAllowRefractionandMSAA() {
 	WriteNop(0x00498968, 2); // Stops Disabling refraction shaders when MSAA, Non detection path
 	WriteRelJump(0x004988D8, 0x0049896A);// Stops Disabling refraction shaders when MSAA, AMD Path
 }
-
 
 #pragma comment(lib, "detours.lib")
 void InstallHooks() {
@@ -148,9 +171,14 @@ void InstallHooks() {
 	WriteRelJump(0x004984BD, 0x004984CD); // Skips antialiasing deactivation if AllowScreenshot is enabled
 	WriteRelJump(0x005E669F, (UInt32)&AvoidNullAccess);
 	WriteRelJump(0x0046FC94, (UInt32)&FixTESSpellListInfiniteLoad);
-
 	WriteRelJump(0x0046FDDE, (UInt32)&FixTESSpellListInfiniteLoad1);
 
+	WriteRelJump(0x004DC070, (UInt32)&FixShouldRespawnNullCheckRoutine);
+
+	if (inst->installMagicTrackingLimitRemoval) {
+		WriteRelJump(0x00613CAC, 0x00613CCA);
+		_MESSAGE("[PATCH] Install Magic Projectile limit removal");
+	}
 	if (inst->updateZlib) {
 		_MESSAGE("[PATCH] Update Zlib inflate functions.");
 		InstallZlibHook();

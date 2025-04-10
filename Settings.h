@@ -7,6 +7,7 @@ public:
 	static inline Settings* Singleton = nullptr;
 
 	bool updateZlib;
+	bool installMagicTrackingLimitRemoval;
 
 	static Settings* getInstance() {
 		if (Singleton) return Singleton;

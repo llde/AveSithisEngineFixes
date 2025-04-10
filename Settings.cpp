@@ -6,4 +6,5 @@ Settings::Settings() {
 	ob += file;
 	_MESSAGE("[Settings] Load Settings file at %s", ob.c_str());
 	this->updateZlib = GetPrivateProfileInt("Main", "UpdateZlib", 0, ob.c_str());
+	this->installMagicTrackingLimitRemoval = GetPrivateProfileInt("Main", "installMagicProjectileLimit", 0, ob.c_str());
 }
