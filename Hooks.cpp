@@ -168,13 +168,12 @@ void InstallHooks() {
 	WriteRelJump(0x0047C8EB, (UInt32)&PreventSetLevelCrashBows); /*Fix crash when calling SetLevel for Actors with Bows equipped*/
 	InstallAllowRefractionandMSAA();
 	WriteRelJump(0x0085BD9D, 0x0085BDAD); /*Stub WATER_LAVA 410 pass*/
-	WriteRelJump(0x004984BD, 0x004984CD); // Skips antialiasing deactivation if AllowScreenshot is enabled
+	//WriteRelJump(0x004984BD, 0x004984CD); // Skips antialiasing deactivation if AllowScreenshot is enabled. TODO: actually seems not actually needed for me. TEST AGAIN
 	WriteRelJump(0x005E669F, (UInt32)&AvoidNullAccess);
 	WriteRelJump(0x0046FC94, (UInt32)&FixTESSpellListInfiniteLoad);
 	WriteRelJump(0x0046FDDE, (UInt32)&FixTESSpellListInfiniteLoad1);
 
 	WriteRelJump(0x004DC070, (UInt32)&FixShouldRespawnNullCheckRoutine);
-
 	if (inst->installMagicTrackingLimitRemoval) {
 		WriteRelJump(0x00613CAC, 0x00613CCA);
 		_MESSAGE("[PATCH] Install Magic Projectile limit removal");
