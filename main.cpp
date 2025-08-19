@@ -48,8 +48,8 @@ bool OBSEPlugin_Query(const OBSEInterface * obse, PluginInfo * info)
 	// fill out the info structure
 	info->infoVersion = PluginInfo::kInfoVersion;
 	info->name = "AveSithisEngineFixes";
-	info->version = 1;
-	_MESSAGE("AveSithis Engine Fixes  Version 1.1");
+	info->version = MAKE_OBLIVION_VERSION(1, 1, 9);
+	_MESSAGE("AveSithis Engine Fixes  Version 1.1.9");
 	// version checks
 	if(!obse->isEditor)
 	{
@@ -85,6 +85,9 @@ bool OBSEPlugin_Load(const OBSEInterface* obse)
 	if (!obse->isEditor)
 	{
 		InstallHooks();
+	}
+	else {
+		InstallEditorHooks();
 	}
 
 	return true;
