@@ -245,7 +245,8 @@ static UInt32 found = 0x0042F7F2;
 const char* esm = ".esm\0";
 
 void __stdcall TestP(const char* Buf, const char* ext){
-	_MESSAGE("%s  %s", Buf, ext);
+	_MESSAGE("Buf : %s", Buf);
+	_MESSAGE("EXT : %s", ext);
 
 }
 //TODO, avoid duplicate
@@ -254,11 +255,6 @@ __asm{
 	   test eax , eax
 	   jnz ok
 	   lea     eax, [esp+458h-20Ch]
-	   pushad
-	   push    esm
-	   push    eax
-	   call TestP
-	   popad
 	   push    esm
 	   push    eax
 	   call    Oblivion_strstr
@@ -298,8 +294,8 @@ void __stdcall  RemoveDuplicates(char* list){
 			newBSAList.append(bsaEntry  + ", ");
 	}
 	newBSAList = newBSAList.substr(0, newBSAList.size() -2);
-	_MESSAGE("%s", bsaList.c_str());
-	_MESSAGE("%s", newBSAList.c_str());
+//	_MESSAGE("%s", bsaList.c_str());
+//	_MESSAGE("%s", newBSAList.c_str());
 	memset(list, 0, size );
 	strcpy(list, newBSAList.c_str() );
 }
@@ -389,6 +385,7 @@ void InstallHooks() {
 }
 
 void InstallEditorHooks() {
+	_MESSAGE("[PATCH] Install CS Bugfixes");
 	/*EXPORT/Read Face Texture for ESP*/
 	WriteRelJump(0x004D5E1E, 0x004D5E2D);
 	WriteRelJump(0x004D9617, 0x004D9626);
