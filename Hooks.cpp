@@ -11,22 +11,26 @@
 #include <obse/NiObjects.h>
 #include "Hooks.h"
 #include <obse_common/SafeWrite.h>
-#include "zlib.h"
 
 #include "Settings.h"
 
-#pragma comment(lib, "zlibstatic.lib")
 /*ZLIB HOOKS SECTION*/
+#define ZLIB_VERSION "1.3.2.1-motley"
 
-int __cdecl zlib_InflateInitEx(z_streamp buffer, const char* versionMode, int size){
-	return inflateInit2_(buffer, 15, ZLIB_VERSION, size);
+int (__cdecl* inflateInit2)(void* buffer, int windowBits, const char* versionMode, int size) = (int (__cdecl* )(void*, int,const char*, int )) 0x0;
+int (__cdecl* inflateEnd)(void* buffer) = (int (__cdecl* )(void*)) 0x0;
+int (__cdecl* inflate)(void* buffer, bool flush) = (int (__cdecl* )(void*, bool )) 0x0;
+
+//TODO HOOK THE NON ZLIB COMPAT ZLIB-NG
+int __cdecl zlib_InflateInitEx(void* buffer, const char* versionMode, int size){
+	return inflateInit2(buffer, 15, ZLIB_VERSION, size);
 }
 
-int __cdecl zlib_InflateEnd(z_streamp buffer){
+int __cdecl zlib_InflateEnd(void* buffer){
 	return inflateEnd(buffer);
 }
 
-int __cdecl zlib_Inflate(z_streamp buffer, bool flush){
+int __cdecl zlib_Inflate(void* buffer, bool flush){
 	return  inflate(buffer, flush);
 }
 
@@ -344,6 +348,22 @@ void __declspec(naked) Hook_TESNPC_FaceTexture_IDLookup(void){
 	}
 }
 
+static UInt32 BipSearchRecursive = 0x007E5A3C;
+static UInt32 BipSearchStrncmp = 0x007E5A2C;
+void __declspec(naked) Hook_NiChildNameBipSearch(void){
+	__asm {
+		test eax,eax
+		jz nullcheck
+		push 3
+		push    0x00A738A4
+        push    eax     
+		jmp [BipSearchStrncmp]
+	nullcheck:
+	    jmp [BipSearchRecursive]
+	}
+}
+
+
 #pragma comment(lib, "detours.lib")
 void InstallHooks() {
 	Settings* inst = Settings::getInstance();
@@ -367,17 +387,38 @@ void InstallHooks() {
 	WriteRelJump(0x0052417E, 0x0052418D );   //Allow Face Textures for ESP defined NPCs
 	WriteRelJump(0x0042F7EA, (UInt32)&Hook_BSALoadFromESP);
 	WriteRelJump(0x0042F933,(UInt32)&Hook_AvoidListDuplicates );
+
+	WriteRelJump(0x007E5A24, (UInt32)&Hook_NiChildNameBipSearch);
 //	WriteRelJump(0x0042F73C, 0x0042F74E);
 //	WriteRelCall(0x005241FB , (UInt32)&TestPrint);
 	WriteRelJump(0x005241C9, (UInt32)&Hook_TESNPC_FaceTexture_IDLookup);
 //New possible bug to check; Feather effect not working on Ability
+	HMODULE libraryHandle = 0;
 	if (inst->installMagicTrackingLimitRemoval) {
 		WriteRelJump(0x00613CAC, 0x00613CCA);
 		_MESSAGE("[PATCH] Install Magic Projectile limit removal");
 	}
 	if (inst->updateZlib) {
-		_MESSAGE("[PATCH] Update Zlib inflate functions.");
-		InstallZlibHook();
+		if(inst->updateZlib == 1){
+			libraryHandle = LoadLibrary(".\\Data\\OBSE\\Plugins\\zlib.dll");
+			_MESSAGE("[PATCH] Update Zlib inflate functions.");
+			if(libraryHandle == nullptr){
+				_MESSAGE("[ERR] Cannot load zlib DLL.");
+			}
+		}
+		else if(inst->updateZlib == 2){
+			libraryHandle = LoadLibrary(".\\Data\\OBSE\\Plugins\\zlib1.dll"); //zlib-ng zlib compat api
+			_MESSAGE("[PATCH] Update Zlib inflate functions with zlib-ng.");
+			if(libraryHandle == nullptr){
+				_MESSAGE("[ERR] Cannot load zlib-ng DLL.");
+			}
+		}
+		if(libraryHandle != nullptr){
+			inflateInit2 = (int (__cdecl *)(void *,int,const char *,int)) GetProcAddress(libraryHandle, "inflateInit2_");
+			inflateEnd = (int (__cdecl *)(void *)) GetProcAddress(libraryHandle, "inflateEnd");
+			inflate = (int (__cdecl *)(void *,bool)) GetProcAddress(libraryHandle, "inflate");
+			InstallZlibHook();
+		}
 	}
 	else {
 		_MESSAGE("[PATCH] Don't update zlib functions");

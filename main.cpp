@@ -27,6 +27,7 @@ OBSEScriptInterface * g_scriptInterface = NULL;	// make sure you assign to this
 #include "obse/Script.h"
 #include "obse/GameObjects.h"
 #include "obse/GameTasks.h"
+#include <obse/GameData.h>
 #include "StringVar.h"
 #include <string>
 
@@ -48,8 +49,8 @@ bool OBSEPlugin_Query(const OBSEInterface * obse, PluginInfo * info)
 	// fill out the info structure
 	info->infoVersion = PluginInfo::kInfoVersion;
 	info->name = "AveSithisEngineFixes";
-	info->version = MAKE_OBLIVION_VERSION(1, 1, 9);
-	_MESSAGE("AveSithis Engine Fixes  Version 1.1.9");
+	info->version = MAKE_OBLIVION_VERSION(1, 3, 0);
+	_MESSAGE("AveSithis Engine Fixes  Version 1.3.0");
 	// version checks
 	if(!obse->isEditor)
 	{
@@ -78,6 +79,19 @@ bool OBSEPlugin_Query(const OBSEInterface * obse, PluginInfo * info)
 	return true;
 }
 
+static void EventMessageCallback(OBSEMessagingInterface::Message* msg) {
+	switch (msg->type) {
+
+		case OBSEMessagingInterface::kMessage_GameInitialized:
+			for(int i = 0; i < 9; i++){
+				UInt32 u = g_firstLoadedArchivesByType[i] ? g_firstLoadedArchivesByType[i]->unk194 : -1;
+				UInt32 fl = g_firstLoadedArchivesByType[i] ? g_firstLoadedArchivesByType[i]->header.flags : -1;
+
+				_MESSAGE("%s  0x%x  0x%x", g_firstLoadedArchivesByType[i] ? g_firstLoadedArchivesByType[i]->m_path : "<null>", u,fl);
+			}
+			break;
+	}
+}
 bool OBSEPlugin_Load(const OBSEInterface* obse)
 {
 	g_pluginHandle = obse->GetPluginHandle();
@@ -85,6 +99,9 @@ bool OBSEPlugin_Load(const OBSEInterface* obse)
 	if (!obse->isEditor)
 	{
 		InstallHooks();
+		auto g_msg = (OBSEMessagingInterface*)obse->QueryInterface(kInterface_Messaging);
+	//	g_msg->RegisterListener(g_pluginHandle, "OBSE", &EventMessageCallback);
+
 	}
 	else {
 		InstallEditorHooks();
